@@ -1,3 +1,4 @@
+
 from env import GridWorld
 from agent import QAgent
 from experiments import EXPERIMENTS
@@ -5,11 +6,28 @@ from config import CONFIG
 from visualize import plot_rewards, plot_heatmap
 
 def state_index(pos):
+    """
+    (b) State representation: Converts a (row, col) tuple to a unique state index for the Q-table.
+    The grid is 0-indexed: (row, col) in [0,4].
+    """
     return pos[0] * CONFIG["grid_size"] + pos[1]
 
-
 def train(alpha, epsilon):
+    """
+    (c, d, e) Trains a Q-learning agent in the GridWorld environment.
+    Args:
+        alpha (float): Learning rate (0 < alpha <= 1)
+        epsilon (float): Epsilon for epsilon-greedy exploration
+    Returns:
+        rewards (list): Episode rewards
+        Q (np.ndarray): Learned Q-table
+    Implements:
+        - Q-table creation (c)
+        - Epsilon-greedy exploration (d)
+        - Early stopping (e)
+    """
     env = GridWorld()
+    # 25 states (5x5), 4 actions (N,S,E,W)
     agent = QAgent(25, 4, alpha, CONFIG["gamma"], epsilon)
 
     rewards = []
@@ -21,6 +39,7 @@ def train(alpha, epsilon):
         for _ in range(CONFIG["max_steps"]):
             state = state_index(pos)
 
+            # (a) Exploration vs Exploitation: agent.choose_action uses epsilon-greedy
             action = agent.choose_action(state)
             new_pos, reward, done = env.step(action)
 
@@ -33,6 +52,7 @@ def train(alpha, epsilon):
             if done:
                 break
 
+        # (e) Early stopping: stop if avg reward > 10 over last 30 episodes
         if len(rewards) >= 30:
             avg_reward = sum(rewards[-30:]) / 30
             if avg_reward > 10:
@@ -43,8 +63,13 @@ def train(alpha, epsilon):
 
     return rewards, agent.Q
 
-
 def run_experiments():
+    """
+    Runs experiments for different alpha/epsilon values (see EXPERIMENTS list).
+    Returns:
+        results (dict): Mapping label -> reward list
+        last_Q (np.ndarray): Q-table from last experiment (for visualization)
+    """
     results = {}
     last_Q = None
 
@@ -59,8 +84,10 @@ def run_experiments():
 
     return results, last_Q
 
-
 if __name__ == "__main__":
+    """
+    (f) Visualize results: Plots smoothed rewards and state value heatmap.
+    """
     results, Q = run_experiments()
 
     plot_rewards(results)
